@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FeedBox</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0a192f;
+            color: #00eaff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+        }
+        .container {
+            background: #112240;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 15px rgba(0, 234, 255, 0.8);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #00eaff;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #00eaff;
+        }
+        input, select, textarea:not(#message) {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #00eaff;
+            border-radius: 4px;
+            background: #0a192f;
+            color: #00eaff;
+        }
+        button {
+            width: 100%;
+            background-color: #00eaff;
+            color: #0a192f;
+            padding: 10px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #029dbb;
+        }
+        #confirmation, #error {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+        #confirmation { color: #00ff00; }
+        #error { color: #ff0000; }
+        #sentimentContainer {
+            margin-top: 10px;
+            display: none;
+        }
+        #sentimentValue {
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        #sentimentMeter {
+            flex: 1;
+            height: 10px;
+            background: linear-gradient(to right, #ff6666, #ffcc00, #00ff00);
+            border-radius: 5px;
+            position: relative;
+            margin: 5px 0;
+        }
+        #meterIndicator {
+            width: 6px;
+            height: 16px;
+            background-color: #0a192f;
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 3px;
+        }
+        #topicsContainer {
+            margin-top: 10px;
+            display: none;
+        }
+        #keyTopics {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .topic-badge {
+            background-color: #00eaff;
+            color: #0a192f;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        #counterContainer {
+            margin-top: 5px;
+            font-size: 12px;
+            text-align: right;
+            color: #00eaff;
+        }
+        .file-upload {
+            border: 1px dashed #00eaff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            position: relative;
+        }
+        .file-upload-label {
+            display: block;
+            text-align: center;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .file-upload input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .file-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .file-item {
+            background: #1a365d;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .file-remove {
+            cursor: pointer;
+            color: #ff6666;
+            font-weight: bold;
+        }
+        .follow-up-container {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #00eaff;
+            border-radius: 4px;
+            background: rgba(0, 234, 255, 0.1);
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-container input[type="checkbox"] {
+            width: auto;
+        }
+        .rating-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .rating {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 5px;
+        }
+        .rating > input {
+            display: none;
+        }
+        .rating > label {
+            position: relative;
+            width: 1.1em;
+            font-size: 30px;
+            color: #FFD700;
+            cursor: pointer;
+            margin: 0;
+        }
+        .rating > label::before {
+            content: "\2605";
+            position: absolute;
+            opacity: 0;
+        }
+        .rating > label:hover:before,
+        .rating > label:hover ~ label:before {
+            opacity: 1 !important;
+        }
+        .rating > input:checked ~ label:before {
+            opacity: 1;
+        }
+        .tox-tinymce {
+            border-radius: 4px !important;
+            border-color: #00eaff !important;
+        }
+        .tox-editor-container {
+            background-color: #0a192f !important;
+        }
+        .tox-toolbar {
+            background-color: #112240 !important;
+        }
+        /* New Styles */
+        .error-message {
+            color: #ff6666;
+            font-size: 12px;
+            margin-top: 2px;
+            display: none;
+        }
+        .spinner {
+            display: none;
+            border: 4px solid #00eaff;
+            border-top: 4px solid #0a192f;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #112240;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            color: #00eaff;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #0a192f;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #00eaff;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        @media (max-width: 600px) {
+            .container { max-width: 100%; padding: 10px; }
+            h1 { font-size: 1.5em; }
+            button { font-size: 14px; }
+        }
+        /* Instagram-Style Message Box */
+        .message-container {
+            position: relative;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            background: #1a365d;
+            border: 1px solid #00eaff;
+            border-radius: 20px;
+            padding: 5px 10px;
+        }
+        #message {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: #00eaff;
+            padding: 8px 10px;
+            margin: 0;
+            resize: vertical;
+            min-height: 50px;
+            font-size: 14px;
+            outline: none;
+        }
+        #message::placeholder {
+            color: #80d4ff; /* Lighter shade for placeholder */
+        }
+        .message-send-btn {
+            background: #00eaff;
+            color: #0a192f;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        .message-send-btn:hover {
+            background: #029dbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FeedBox</h1>
+        <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        <form id="feedbackForm">
+            <label for="name">Name (Optional):</label>
+            <input type="text" id="name" placeholder="Enter your name">
+            <span class="error-message" id="name-error"></span>
+
+            <label for="class">Class:</label>
+            <select id="class" required>
+                <option value="">Select your class</option>
+                <option value="Form 1A">Form 1A</option>
+                <option value="Form 1B">Form 1B</option>
+                <option value="Form 1C">Form 1C</option>
+                <option value="Form 1D">Form 1D</option>
+                <option value="Form 1E">Form 1E</option>
+                <option value="Form 1F">Form 1F</option>
+                <option value="Form 1G">Form 1G</option>
+                <option value="Form 2A">Form 2A</option>
+                <option value="Form 2B">Form 2B</option>
+                <option value="Form 2C">Form 2C</option>
+                <option value="Form 2D">Form 2D</option>
+                <option value="Form 2E">Form 2E</option>
+                <option value="Form 2F">Form 2F</option>
+                <option value="Form 2G">Form 2G</option>
+                <option value="Form 3A">Form 3A</option>
+                <option value="Form 3B">Form 3B</option>
+                <option value="Form 3C">Form 3C</option>
+                <option value="Form 3D">Form 3D</option>
+                <option value="Form 3E">Form 3E</option>
+                <option value="Form 3F">Form 3F</option>
+                <option value="Form 3G">Form 3G</option>
+                <option value="Form 4A">Form 4A</option>
+                <option value="Form 4B">Form 4B</option>
+                <option value="Form 4C">Form 4C</option>
+                <option value="Form 4D">Form 4D</option>
+                <option value="Form 4E">Form 4E</option>
+                <option value="Form 4F">Form 4F</option>
+                <option value="Form 4G">Form 4G</option>
+                <option value="A-Level">A-Level</option>
+                <option value="Other">Other</option>
+            </select>
+            <span class="error-message" id="class-error"></span>
+
+            <label for="fileNo">File No:</label>
+            <input type="text" id="fileNo" placeholder="Enter your file number" required>
+            <span class="error-message" id="fileNo-error"></span>
+
+            <label for="house">House:</label>
+            <input type="text" id="house" placeholder="Enter your house" required>
+            <span class="error-message" id="house-error"></span>
+
+            <label for="email">Email (Optional):</label>
+            <input type="email" id="email" placeholder="Enter your email">
+            <span class="error-message" id="email-error"></span>
+
+            <label for="feedbackType">Type of Feedback:</label>
+            <select id="feedbackType" required>
+                <option value="">Select feedback type</option>
+                <option value="complaint">Complaint</option>
+                <option value="suggestion">Suggestion</option>
+                <option value="compliment">Compliment</option>
+                <option value="question">Question</option>
+                <option value="request">Request</option>
+            </select>
+            <span class="error-message" id="feedbackType-error"></span>
+
+            <label for="feedbackCategory">Category:</label>
+            <select id="feedbackCategory" required>
+                <option value="">Select category</option>
+                <option value="facilities">Facilities & Infrastructure</option>
+                <option value="teaching">Teaching & Learning</option>
+                <option value="technology">Technology & IT Services</option>
+                <option value="food">Food & Dining</option>
+                <option value="extracurricular">Extracurricular Activities</option>
+                <option value="staff">Staff & Administration</option>
+                <option value="wellbeing">Health & Wellbeing</option>
+                <option value="policies">Rules & Policies</option>
+                <option value="schedule">Schedule & Timetable</option>
+                <option value="diversity">Diversity & Inclusion</option>
+                <option value="communication">Communication</option>
+                <option value="finance">Fees & Financial Matters</option>
+                <option value="other">Other</option>
+            </select>
+            <span class="error-message" id="feedbackCategory-error"></span>
+
+            <label for="message">Message:</label>
+            <div class="message-container">
+                <textarea id="message" placeholder="Enter your message" required></textarea>
+                <button type="button" class="message-send-btn" onclick="tinymce.activeEditor.execCommand('mceInsertContent', false, document.getElementById('message').value); document.getElementById('message').value = '';">➤</button>
+            </div>
+            <span class="error-message" id="message-error"></span>
+            <div id="counterContainer">0 characters, 0 words</div>
+
+            <div class="file-upload">
+                <label class="file-upload-label">
+                    <span>Click or drag files here to attach (optional, max 5MB, JPG/PNG/PDF)</span>
+                    <input type="file" id="fileAttachment" multiple>
+                </label>
+                <div class="file-preview" id="filePreview"></div>
+            </div>
+
+            <div class="follow-up-container">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="requestFollowup" name="requestFollowup">
+                    <label for="requestFollowup">Request follow-up response</label>
+                </div>
+                <div id="followupDetails" style="display: none; margin-top: 10px;">
+                    <label for="followupReason">Please explain why you need a follow-up:</label>
+                    <textarea id="followupReason" rows="2" placeholder="Briefly explain..."></textarea>
+                    <label for="followupContactMethod">Preferred contact method:</label>
+                    <select id="followupContactMethod">
+                        <option value="email">Email</option>
+                        <option value="phone">Phone</option>
+                        <option value="in-person">In-person</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="sentimentContainer" role="region" aria-label="Sentiment Analysis">
+                <label for="sentimentValue">Message Sentiment:</label>
+                <div id="sentimentValue" aria-live="polite">Neutral (0.00)</div>
+                <div style="display: flex; align-items: center; margin-top: 5px;">
+                    <span style="font-size: 12px; margin-right: 5px;">Negative</span>
+                    <div id="sentimentMeter">
+                        <div id="meterIndicator"></div>
+                    </div>
+                    <span style="font-size: 12px; margin-left: 5px;">Positive</span>
+                </div>
+            </div>
+
+            <div id="topicsContainer">
+                <label>Key Topics Detected:</label>
+                <div id="keyTopics"></div>
+            </div>
+
+            <input type="hidden" id="sentimentScore" name="sentimentScore" value="0">
+            <input type="hidden" id="detectedTopics" name="detectedTopics" value="">
+            <input type="hidden" id="fileList" name="fileList" value="">
+
+            <button type="button" id="previewBtn">Preview Feedback</button>
+            <button type="submit" id="submitBtn">Submit Feedback</button>
+        </form>
+        <div class="spinner" id="loadingSpinner"></div>
+        <p id="confirmation">Feedback submitted successfully!</p>
+        <p id="error">Failed to send feedback. Please try again.</p>
+    </div>
+
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <h2>Feedback Preview</h2>
+            <div id="previewContent"></div>
+            <button onclick="document.getElementById('previewModal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // EmailJS Initialization
+        emailjs.init("6hV3XHFqm-YDRYS7f");
+
+        // Lazy-load TinyMCE
+        import('https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.4.2/tinymce.min.js')
+            .then(() => {
+                tinymce.init({
+                    selector: '#message',
+                    height: 300,
+                    menubar: false,
+                    plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste help wordcount emoticons',
+                    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link emoticons | removeformat | help',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; color: #00eaff; background-color: #1a365d; }',
+                    skin: 'oxide-dark',
+                    content_css: 'dark',
+                    setup: function(editor) {
+                        editor.on('input', function(e) {
+                            analyzeContent(editor.getContent({ format: 'text' }));
+                            saveDraft();
+                        });
+                    }
+                });
+            });
+
+        // Real-time Validation
+        function validateField(field) {
+            const error = document.getElementById(`${field.id}-error`);
+            if (field.required && !field.value) {
+                field.style.borderColor = '#ff6666';
+                error.textContent = `${field.labels[0].textContent} is required`;
+                error.style.display = 'block';
+                return false;
+            } else if (field.type === 'email' && field.value && !field.value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+                field.style.borderColor = '#ff6666';
+                error.textContent = 'Invalid email format';
+                error.style.display = 'block';
+                return false;
+            } else {
+                field.style.borderColor = '#00eaff';
+                error.style.display = 'none';
+                return true;
+            }
+        }
+
+        document.querySelectorAll('input, select, textarea').forEach(field => {
+            field.addEventListener('blur', () => validateField(field));
+            field.addEventListener('input', updateProgress);
+        });
+
+        // Progress Bar
+        function updateProgress() {
+            const requiredFields = document.querySelectorAll('#feedbackForm [required]');
+            let filled = 0;
+            requiredFields.forEach(field => {
+                if (field.value) filled++;
+            });
+            const progress = (filled / requiredFields.length) * 100;
+            document.querySelector('.progress-fill').style.width = `${progress}%`;
+        }
+
+        // Auto-Save Drafts
+        function saveDraft() {
+            const formData = {
+                name: document.getElementById('name').value,
+                class: document.getElementById('class').value,
+                fileNo: document.getElementById('fileNo').value,
+                house: document.getElementById('house').value,
+                email: document.getElementById('email').value,
+                feedbackType: document.getElementById('feedbackType').value,
+                feedbackCategory: document.getElementById('feedbackCategory').value,
+                message: tinymce.activeEditor?.getContent() || ''
+            };
+            localStorage.setItem('feedboxDraft', JSON.stringify(formData));
+        }
+
+        window.onload = function() {
+            const draft = JSON.parse(localStorage.getItem('feedboxDraft'));
+            if (draft) {
+                document.getElementById('name').value = draft.name || '';
+                document.getElementById('class').value = draft.class || '';
+                document.getElementById('fileNo').value = draft.fileNo || '';
+                document.getElementById('house').value = draft.house || '';
+                document.getElementById('email').value = draft.email || '';
+                document.getElementById('feedbackType').value = draft.feedbackType || '';
+                document.getElementById('feedbackCategory').value = draft.feedbackCategory || '';
+                tinymce.activeEditor?.setContent(draft.message || '');
+            }
+            updateProgress();
+        };
+
+        // File Upload Handling
+        document.getElementById('fileAttachment').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const filePreview = document.getElementById('filePreview');
+            const fileList = document.getElementById('fileList');
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            filePreview.innerHTML = '';
+            const fileNames = [];
+
+            Array.from(files).forEach(file => {
+                if (file.size > maxSize) {
+                    alert(`${file.name} exceeds 5MB limit`);
+                    return;
+                }
+                if (!allowedTypes.includes(file.type)) {
+                    alert(`${file.name} is not a supported file type (JPG, PNG, PDF only)`);
+                    return;
+                }
+                fileNames.push(file.name);
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `<span>${file.name}</span><span class="file-remove" tabindex="0">×</span>`;
+                fileItem.querySelector('.file-remove').addEventListener('click', () => {
+                    fileItem.remove();
+                    fileNames.splice(fileNames.indexOf(file.name), 1);
+                    fileList.value = fileNames.join(',');
+                });
+                fileItem.querySelector('.file-remove').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') fileItem.querySelector('.file-remove').click();
+                });
+                filePreview.appendChild(fileItem);
+            });
+            fileList.value = fileNames.join(',');
+        });
+
+        // Follow-up Toggle
+        document.getElementById('requestFollowup').addEventListener('change', function() {
+            document.getElementById('followupDetails').style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Enhanced Sentiment Analysis
+        async function analyzeSentiment(text) {
+            const positiveWords = [
+                'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'terrific',
+                'outstanding', 'brilliant', 'superb', 'perfect', 'happy', 'pleased', 'delighted',
+                'satisfied', 'appreciate', 'thanks', 'thank', 'helpful', 'awesome', 'love', 'best',
+                'better', 'improved', 'positive', 'recommend', 'impressed', 'impressive', 'kind',
+                'friendly', 'efficient', 'effective', 'valuable', 'beneficial', 'enjoyable', 'pleased',
+                'grateful', 'thankful', 'exceptional', 'marvelous', 'splendid', 'favorable', 'superior',
+                'engaging', 'inspiring', 'insightful', 'knowledgeable', 'supportive', 'motivating',
+                'organized', 'clear', 'innovative', 'interesting', 'comprehensive', 'fair', 'accessible',
+                'responsive', 'enthusiastic', 'passionate', 'dedicated', 'patient', 'respectful',
+                'inclusive', 'collaborative', 'practical', 'encouraging', 'constructive', 'accommodating'
+            ];
+            const negativeWords = [
+                'bad', 'poor', 'terrible', 'horrible', 'awful', 'disappointing', 'frustrated',
+                'frustrating', 'disappointed', 'unsatisfied', 'unhappy', 'not good', 'worst',
+                'worse', 'problem', 'issue', 'complaint', 'negative', 'difficult', 'hard',
+                'confusing', 'confused', 'slow', 'broken', 'fail', 'failed', 'failure', 'error',
+                'inadequate', 'insufficient', 'useless', 'awful', 'terrible', 'inferior', 'subpar',
+                'boring', 'disorganized', 'unfair', 'unclear', 'overwhelming', 'outdated',
+                'unprepared', 'inconsistent', 'irrelevant', 'unhelpful', 'inappropriate',
+                'unresponsive', 'tedious', 'monotonous', 'rushed', 'demanding', 'stressful',
+                'neglected', 'mismanaged', 'biased', 'unprofessional', 'late', 'inaccessible',
+                'distracting', 'unpunctual', 'disruptive', 'unrealistic'
+            ];
+            const contextEnhancers = [
+                { pattern: 'very', multiplier: 1.5 },
+                { pattern: 'really', multiplier: 1.5 },
+                { pattern: 'extremely', multiplier: 2 },
+                { pattern: 'not', multiplier: -1 },
+                { pattern: "n't", multiplier: -1 },
+                { pattern: 'too', multiplier: 1.3 }
+            ];
+            text = text.toLowerCase();
+            let score = 0, posMatches = 0, negMatches = 0;
+            const words = text.split(/\s+/);
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i].replace(/[.,!?;:]/g, '');
+                let multiplier = 1;
+                if (i > 0) {
+                    for (const enhancer of contextEnhancers) {
+                        if (words[i-1].includes(enhancer.pattern)) {
+                            multiplier = enhancer.multiplier;
+                            break;
+                        }
+                    }
+                }
+                if (positiveWords.includes(word)) {
+                    posMatches++;
+                    score += (1 * multiplier);
+                } else if (negativeWords.includes(word)) {
+                    negMatches++;
+                    score -= (1 * multiplier);
+                }
+            }
+            const totalMatches = posMatches + negMatches;
+            return totalMatches > 0 ? Math.max(-1, Math.min(1, score / Math.max(totalMatches, 3))) : 0;
+        }
+
+        // Topic Detection
+        function detectTopics(text) {
+            const topicKeywords = {
+                'facilities': ['classroom', 'room', 'building', 'toilet', 'bathroom', 'lab', 'laboratory', 'library', 'hall', 'field', 'court', 'canteen', 'cafeteria', 'facility', 'dormitory', 'hostel', 'auditorium', 'gym'],
+                'teaching': ['teacher', 'lesson', 'class', 'teaching', 'learn', 'learning', 'study', 'studying', 'education', 'academic', 'homework', 'assignment', 'exam', 'test', 'curriculum', 'syllabus', 'lecture', 'tutorial', 'assessment', 'grading', 'feedback', 'question', 'explanation', 'understanding', 'knowledge', 'concept'],
+                'technology': ['computer', 'internet', 'wifi', 'wi-fi', 'online', 'device', 'laptop', 'tablet', 'software', 'system', 'technology', 'tech', 'website', 'app', 'digital', 'electronic', 'portal', 'projector', 'smartboard', 'screen', 'connection', 'bandwidth', 'login', 'password', 'account'],
+                'food': ['food', 'meal', 'lunch', 'breakfast', 'dinner', 'canteen', 'cafeteria', 'menu', 'eat', 'eating', 'nutrition', 'snack', 'drink', 'diet', 'vegetarian', 'vegan', 'halal', 'kosher', 'allergy', 'catering', 'portion', 'price', 'quality', 'variety', 'healthy', 'junk'],
+                'extracurricular': ['activity', 'club', 'sport', 'team', 'event', 'competition', 'tournament', 'program', 'extracurricular', 'cca', 'outing', 'trip', 'excursion', 'volunteer', 'community', 'service', 'leadership', 'society', 'council', 'committee', 'choir', 'band', 'orchestra', 'drama', 'debate', 'conference'],
+                'staff': ['staff', 'teacher', 'principal', 'coordinator', 'counselor', 'admin', 'administration', 'management', 'supervisor', 'coach', 'lecturer', 'professor', 'tutor', 'mentor', 'advisor', 'headmaster', 'headmistress', 'dean', 'director', 'librarian', 'nurse', 'secretary', 'receptionist', 'janitor', 'security'],
+                'wellbeing': ['safe', 'safety', 'security', 'bully', 'bullying', 'harassment', 'health', 'wellbeing', 'well-being', 'welfare', 'protect', 'protection', 'mental', 'stress', 'anxiety', 'depression', 'pressure', 'workload', 'balance', 'support', 'counseling', 'therapy', 'emotional', 'psychological', 'physical', 'medical'],
+                'policies': ['rule', 'regulation', 'policy', 'discipline', 'uniform', 'guideline', 'code', 'conduct', 'behavior', 'behaviour', 'restriction', 'requirement', 'standard', 'expectation', 'consequence', 'punishment', 'detention', 'suspension', 'expulsion', 'merit', 'demerit', 'reward', 'penalty', 'permission', 'prohibition', 'attendance'],
+                'schedule': ['schedule', 'timetable', 'time', 'period', 'duration', 'hours', 'day', 'week', 'term', 'semester', 'holiday', 'break', 'vacation', 'leave', 'absence', 'late', 'early', 'dismissal', 'calendar', 'deadline', 'due', 'date', 'appointment', 'meeting', 'punctual', 'delay'],
+                'diversity': ['diversity', 'inclusion', 'inclusive', 'equality', 'equity', 'discrimination', 'race', 'racial', 'ethnic', 'religious', 'gender', 'sexuality', 'disability', 'accessible', 'accommodation', 'representation', 'minority', 'culture', 'language', 'international', 'foreign', 'background', 'stereotype', 'bias', 'prejudice'],
+                'communication': ['communication', 'inform', 'announce', 'notification', 'message', 'email', 'contact', 'respond', 'response', 'feedback', 'update', 'newsletter', 'bulletin', 'notice', 'platform', 'channel', 'parent', 'teacher', 'conference', 'meeting', 'discuss', 'discussion', 'conversation', 'misunderstanding', 'clarity'],
+                'finance': ['fee', 'fees', 'payment', 'cost', 'expensive', 'affordable', 'price', 'financial', 'finance', 'money', 'fund', 'funding', 'budget', 'scholarship', 'bursary', 'loan', 'grant', 'aid', 'subsidy', 'discount', 'waiver', 'billing', 'invoice', 'receipt', 'refund']
+            };
+            text = text.toLowerCase();
+            const detectedTopics = [];
+            for (const [topic, keywords] of Object.entries(topicKeywords)) {
+                for (const keyword of keywords) {
+                    if (text.includes(keyword)) {
+                        detectedTopics.push(topic);
+                        break;
+                    }
+                }
+            }
+            return [...new Set(detectedTopics)];
+        }
+
+        // Content Analysis
+        async function analyzeContent(text) {
+            const charCount = text.length;
+            const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            document.getElementById('counterContainer').textContent = `${charCount} characters, ${wordCount} words`;
+
+            const sentimentScore = await analyzeSentiment(text);
+            updateSentimentDisplay(sentimentScore);
+            const topics = detectTopics(text);
+            updateTopicsDisplay(topics);
+            suggestFeedbackType(sentimentScore, topics);
+            suggestCategory(topics);
+        }
+
+        // Suggestion Functions
+        function suggestFeedbackType(score, topics) {
+            if (!document.getElementById('feedbackType').value) {
+                if (score > 0.5) document.getElementById('feedbackType').value = "compliment";
+                else if (score < -0.3) document.getElementById('feedbackType').value = "complaint";
+                else if (topics.includes("facilities") || topics.includes("technology") || topics.includes("food")) {
+                    document.getElementById('feedbackType').value = "suggestion";
+                }
+            }
+        }
+
+        function suggestCategory(topics) {
+            if (!document.getElementById('feedbackCategory').value && topics.length > 0) {
+                document.getElementById('feedbackCategory').value = topics[0];
+            }
+        }
+
+        // Display Updates
+        function updateSentimentDisplay(score) {
+            const sentimentValue = document.getElementById('sentimentValue');
+            const meterIndicator = document.getElementById('meterIndicator');
+            document.getElementById('sentimentScore').value = score;
+            let sentiment, color;
+            if (score > 0.5) { sentiment = 'Positive'; color = '#00ff00'; }
+            else if (score > 0.1) { sentiment = 'Slightly Positive'; color = '#b7f0b7'; }
+            else if (score < -0.5) { sentiment = 'Negative'; color = '#ff6666'; }
+            else if (score < -0.1) { sentiment = 'Slightly Negative'; color = '#ffb3b3'; }
+            else { sentiment = 'Neutral'; color = '#ffcc00'; }
+            sentimentValue.textContent = `${sentiment} (${score.toFixed(2)})`;
+            sentimentValue.style.backgroundColor = color;
+            sentimentValue.style.color = '#000';
+            document.getElementById('sentimentContainer').style.display = 'block';
+            const position = ((score + 1) / 2) * 100;
+            meterIndicator.style.left = `${position}%`;
+        }
+
+        function updateTopicsDisplay(topics) {
+            const topicsDisplay = document.getElementById('keyTopics');
+            document.getElementById('detectedTopics').value = topics.join(', ');
+            topicsDisplay.innerHTML = '';
+            if (topics.length > 0) {
+                topics.forEach(topic => {
+                    const badge = document.createElement('span');
+                    badge.className = 'topic-badge';
+                    badge.textContent = topic;
+                    topicsDisplay.appendChild(badge);
+                });
+                document.getElementById('topicsContainer').style.display = 'block';
+            }
+        }
+
+        // Sanitize Input
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        // Preview Feedback
+        document.getElementById('previewBtn').addEventListener('click', () => {
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <p><strong>Name:</strong> ${sanitizeInput(document.getElementById('name').value) || 'N/A'}</p>
+                <p><strong>Class:</strong> ${sanitizeInput(document.getElementById('class').value)}</p>
+                <p><strong>File No:</strong> ${sanitizeInput(document.getElementById('fileNo').value)}</p>
+                <p><strong>House:</strong> ${sanitizeInput(document.getElementById('house').value)}</p>
+                <p><strong>Email:</strong> ${sanitizeInput(document.getElementById('email').value) || 'N/A'}</p>
+                <p><strong>Type:</strong> ${sanitizeInput(document.getElementById('feedbackType').value)}</p>
+                <p><strong>Category:</strong> ${sanitizeInput(document.getElementById('feedbackCategory').value)}</p>
+                <p><strong>Message:</strong> ${tinymce.activeEditor.getContent()}</p>
+                <p><strong>Files:</strong> ${sanitizeInput(document.getElementById('fileList').value) || 'None'}</p>
+                <p><strong>Follow-up:</strong> ${document.getElementById('requestFollowup').checked ? 'Yes' : 'No'}</p>
+            `;
+            document.getElementById('previewModal').style.display = 'flex';
+        });
+
+        // Form Submission
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const requiredFields = document.querySelectorAll('#feedbackForm [required]');
+            let isValid = true;
+            requiredFields.forEach(field => {
+                if (!validateField(field)) isValid = false;
+            });
+            if (!isValid) return;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            document.getElementById('loadingSpinner').style.display = 'block';
+
+            const formData = {
+                name: sanitizeInput(document.getElementById('name').value),
+                class: sanitizeInput(document.getElementById('class').value),
+                fileNo: sanitizeInput(document.getElementById('fileNo').value),
+                house: sanitizeInput(document.getElementById('house').value),
+                email: sanitizeInput(document.getElementById('email').value),
+                feedbackType: sanitizeInput(document.getElementById('feedbackType').value),
+                feedbackCategory: sanitizeInput(document.getElementById('feedbackCategory').value),
+                message: sanitizeInput(tinymce.activeEditor.getContent()),
+                sentimentScore: document.getElementById('sentimentScore').value,
+                detectedTopics: document.getElementById('detectedTopics').value,
+                fileList: sanitizeInput(document.getElementById('fileList').value),
+                requestFollowup: document.getElementById('requestFollowup').checked ? 'Yes' : 'No',
+                followupReason: document.getElementById('requestFollowup').checked ? sanitizeInput(document.getElementById('followupReason').value) : '',
+                followupContactMethod: document.getElementById('requestFollowup').checked ? document.getElementById('followupContactMethod').value : ''
+            };
+
+            emailjs.send("service_id", "template_id", formData)
+                .then(() => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('confirmation').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    this.reset();
+                    tinymce.activeEditor.setContent('');
+                    document.getElementById('filePreview').innerHTML = '';
+                    document.getElementById('followupDetails').style.display = 'none';
+                    localStorage.removeItem('feedboxDraft');
+                    updateProgress();
+                    setTimeout(() => submitBtn.disabled = false, 5000); // 5-second cooldown
+                }, (error) => {
+                    console.log("FAILED...", error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('confirmation').style.display = 'none';
+                    document.getElementById('error').style.display = 'block';
+                    setTimeout(() => submitBtn.disabled = false, 5000);
+                });
+        });
+    </script>
+</body>
+</html>
